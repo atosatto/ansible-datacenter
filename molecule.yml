@@ -1,0 +1,34 @@
+---
+
+# configuration options for the internal call to vagrant
+vagrant:
+
+  # molecule's --platform option will look for these names
+  platforms:
+    - name: centos7
+      box: centos/7
+    - name: xenial
+      box: ubuntu/xenial64
+
+  providers:
+    - name: virtualbox
+      type: virtualbox
+#      options:
+#        memory: 512
+#        cpus: 2
+
+  instances:
+    - name: ansible-datacenter-01
+      ansible_groups:
+        - docker_csengine
+        - docker_ucp
+        - docker_dtr
+      interfaces:
+        - network_name: private_network
+          type: dhcp
+          auto_config: true
+      options:
+        append_platform_to_hostname: yes
+      # vagrant arguments specific to this instance
+#      raw_config_args:
+#        - "vm.synced_folder '../projects/web', '/web'"

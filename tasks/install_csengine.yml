@@ -1,0 +1,56 @@
+---
+
+- name: Import Docker RPM public key for CS packages.
+  rpm_key:
+    key: "{{ docker_cs_pubkey }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Import Docker APT public key for CS packages.
+  apt_key:
+    url: "{{ docker_cs_pubkey }}"
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install yum-utils if necessary.
+  yum:
+    name: yum-utils
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Install apt-transport-https if necessary.
+  apt:
+    name: apt-transport-https
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install additional linux virtual drivers.
+  apt:
+    name: linux-image-extra-virtual
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Add the YUM Docker repository.
+  yum_repository:
+    name: docker
+    description: Docker CS repository.
+    baseurl: "{{ docker_cs_yum_repo }}"
+  when: ansible_os_family == 'RedHat'
+
+- name: Add the APT Docker repository.
+  apt_repository:
+    repo: "deb {{ docker_cs_apt_repo }} {{ ansible_distribution | lower }}-{{ ansible_distribution_release }} main"
+    state: present
+    filename: 'docker'
+  when: ansible_os_family == 'Debian'
+
+- name: Install Docker CS Engine.
+  package:
+    name: docker-engine
+    state: present
+
+- name: Enable the Docker daemon as a service and start it.
+  service:
+    name: docker.service
+    state: started
+    enabled: yes

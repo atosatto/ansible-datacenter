@@ -1,0 +1,13 @@
+---
+
+- name: "Install python on Ubuntu Xenial."
+  hosts: all
+  tasks:
+  - name: Install python-minimal
+    raw: apt-get install python-minimal
+    when: ansible_distribution_release == 'xenial'
+
+- name: "Install Docker datacenter"
+  hosts: all
+  roles:
+    - role: ansible-datacenter
