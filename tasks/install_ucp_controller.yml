@@ -1,0 +1,100 @@
+---
+
+- name: Install docker-py.
+  package:
+    name: python-docker-py
+    state: present
+
+- name: Check if UCP is running on Cluster Controllers.
+  shell: docker ps -a --filter status=running --filter name=ucp-controller --format "{{ '{{' }}.ID{{ '}}' }}"
+  changed_when: False
+  register: ucp_controller
+
+- name: Upload the UCP subscription file.
+  copy:
+    src: "{{ local_docker_ucp_subscription_file }}"
+    dest: "{{ docker_ucp_subscription_file }}"
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Install the UCP Controller.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        -v {{ docker_ucp_subscription_file }}:/docker_subscription.lic
+        docker/ucp install
+        --admin-username {{ docker_ucp_admin_username }}
+        --admin-password {{ docker_ucp_admin_password }}
+        --swarm-port {{ docker_ucp_swarm_port }}
+        --controller-port {{ docker_ucp_controller_port }}
+        --host-address {{ docker_ucp_host_address }}
+        {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
+        {{ docker_ucp_extra_args }}
+  when: inventory_hostname == groups['docker_ucp_controller'][0] and ucp_controller['stdout'] == ""
+
+- name: Export the UCP instance ID.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        docker/ucp id
+  register: ucp_instance_id
+  changed_when: False
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Dump the UCP Controller root CA.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        docker/ucp backup --id {{ ucp_instance_id['stdout'] }}
+        {% if docker_ucp_backup_passfrase is defined and docker_ucp_backup_passfrase != "" %}--passfrase {{ docker_ucp_backup_passfrase }}{% endif %}
+        > {{ docker_ucp_backup_file }}
+        creates={{ docker_ucp_backup_file }}
+  register: ucp_backup
+  changed_when: False
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Fetch the UCP root CA from the Controller.
+  fetch:
+    src: "{{ docker_ucp_backup_file }}"
+    dest: "{{ local_docker_ucp_backup_file }}"
+    flat: yes
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Distribuite the UCP root CA to the other candidate Controllers.
+  copy:
+    src: "{{ local_docker_ucp_backup_file }}"
+    dest: "{{ docker_ucp_backup_file }}"
+  when: inventory_hostname != groups['docker_ucp_controller'][0]
+
+- name: Export the UCP Controller URL as Fact.
+  set_fact:
+    docker_ucp_controller_url: "https://{{ docker_ucp_host_address }}:{{ docker_ucp_controller_port }}"
+  run_once: true
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Export the UCP instance fingerprint.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        docker/ucp fingerprint
+  register: ucp_instance_fingerprint
+  changed_when: False
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Export the UCP instance fingerprint as Fact.
+  set_fact:
+    docker_ucp_fingerprint: "{{ ucp_instance_fingerprint['stdout'] }}"
+  run_once: true
+  when: inventory_hostname == groups['docker_ucp_controller'][0]
+
+- name: Add Controller replicas to the UCP cluster.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        -v {{ docker_ucp_backup_file }}:/backup.tar
+        docker/ucp join --replica
+        --admin-username {{ docker_ucp_admin_username }}
+        --admin-password {{ docker_ucp_admin_password }}
+        --swarm-port {{ docker_ucp_swarm_port }}
+        --controller-port {{ docker_ucp_controller_port }}
+        --url {{ docker_ucp_controller_url }}
+        --fingerprint {{ docker_ucp_fingerprint }}
+        {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
+        {% if docker_ucp_backup_passfrase is defined and docker_ucp_backup_passfrase != "" %}--passfrase {{ docker_ucp_backup_passfrase }}{% endif %}
+  when: inventory_hostname != groups['docker_ucp_controller'][0] and ucp_controller['stdout'] == ""
+
+- fail: msg="Ciaooone"

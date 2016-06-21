@@ -13,16 +13,26 @@ vagrant:
   providers:
     - name: virtualbox
       type: virtualbox
-#      options:
-#        memory: 512
-#        cpus: 2
+      options:
+        memory: 2048
+        cpus: 2
 
   instances:
     - name: ansible-datacenter-01
       ansible_groups:
         - docker_csengine
-        - docker_ucp
+        - docker_ucp_controller
         - docker_dtr
+      interfaces:
+        - network_name: private_network
+          type: dhcp
+          auto_config: true
+      options:
+        append_platform_to_hostname: yes
+    - name: ansible-datacenter-02
+      ansible_groups:
+        - docker_csengine
+        - docker_ucp_controller
       interfaces:
         - network_name: private_network
           type: dhcp

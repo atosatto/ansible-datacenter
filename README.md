@@ -21,6 +21,8 @@ A list of other roles hosted on Galaxy should go here, plus any details in regar
 Example Playbook
 ----------------
 
+https://success.docker.com/Datacenter/Solve/How_to_download_your_Docker_license_key
+
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
     - hosts: servers

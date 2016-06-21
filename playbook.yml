@@ -1,11 +1,15 @@
 ---
 
-- name: "Install python on Ubuntu Xenial."
+- name: "Before provisioning."
   hosts: all
   tasks:
-  - name: Install python-minimal
-    raw: apt-get install python-minimal
-    when: ansible_distribution_release == 'xenial'
+    - name: Install python-minimal on Ubuntu Xenial.
+      raw: apt-get install python-minimal
+      when: ansible_distribution_release == 'xenial'
+    - name: Set the docker_ucp_host_address.
+      set_fact:
+        docker_ucp_host_address: "{{ ansible_all_ipv4_addresses[0] }}"
+      when: inventory_hostname == groups['docker_ucp_controller'][0]
 
 - name: "Install Docker datacenter"
   hosts: all

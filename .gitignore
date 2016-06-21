@@ -3,3 +3,5 @@
 tests/.cache/
 
 *.retry
+
+files/*.lic
