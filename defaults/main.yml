@@ -10,7 +10,10 @@ docker_ucp_subscription_file: "/root/docker_subscription.lic"
 
 docker_ucp_swarm_port: 2376
 docker_ucp_controller_port: 443
-docker_ucp_host_address: ""
+docker_ucp_host_address: "{{ ansible_default_ipv4['address'] }}"
+#docker_ucp_controller_url: "ucp.docker.lan"
+#docker_ucp_san:
+#  - ucp.docker.lan
 docker_ucp_san: ""
 docker_ucp_extra_args: ""
 #docker_ucp_extra_args: "--disable-tracking --disable-usage --binpack"

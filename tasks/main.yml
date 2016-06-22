@@ -3,5 +3,5 @@
 # Install the Commercially Supported Docker Engine
 - include: install_csengine.yml
 
-# Setup the Docker Universal Control Plane on Controller nodes
-- include: install_ucp_controller.yml
+# Setup the Docker Universal Control Plane Cluster
+- include: setup_ucp_cluster.yml

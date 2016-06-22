@@ -5,7 +5,7 @@
     name: python-docker-py
     state: present
 
-- name: Check if UCP is running on Cluster Controllers.
+- name: Check if UCP is running on controllers.
   shell: docker ps -a --filter status=running --filter name=ucp-controller --format "{{ '{{' }}.ID{{ '}}' }}"
   changed_when: False
   register: ucp_controller
@@ -16,7 +16,7 @@
     dest: "{{ docker_ucp_subscription_file }}"
   when: inventory_hostname == groups['docker_ucp_controller'][0]
 
-- name: Install the UCP Controller.
+- name: Install the first UCP controller.
   shell: docker run --rm --name ucp
         -v /var/run/docker.sock:/var/run/docker.sock
         -v {{ docker_ucp_subscription_file }}:/docker_subscription.lic
@@ -25,7 +25,7 @@
         --admin-password {{ docker_ucp_admin_password }}
         --swarm-port {{ docker_ucp_swarm_port }}
         --controller-port {{ docker_ucp_controller_port }}
-        --host-address {{ docker_ucp_host_address }}
+        {% if docker_ucp_host_address is defined %}--host-address {{ docker_ucp_host_address }}{% endif %}
         {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
         {{ docker_ucp_extra_args }}
   when: inventory_hostname == groups['docker_ucp_controller'][0] and ucp_controller['stdout'] == ""
@@ -38,7 +38,7 @@
   changed_when: False
   when: inventory_hostname == groups['docker_ucp_controller'][0]
 
-- name: Dump the UCP Controller root CA.
+- name: Dump the UCP controller root CA.
   shell: docker run --rm --name ucp
         -v /var/run/docker.sock:/var/run/docker.sock
         docker/ucp backup --id {{ ucp_instance_id['stdout'] }}
@@ -49,20 +49,20 @@
   changed_when: False
   when: inventory_hostname == groups['docker_ucp_controller'][0]
 
-- name: Fetch the UCP root CA from the Controller.
+- name: Fetch the UCP root CA from the controller.
   fetch:
     src: "{{ docker_ucp_backup_file }}"
     dest: "{{ local_docker_ucp_backup_file }}"
     flat: yes
   when: inventory_hostname == groups['docker_ucp_controller'][0]
 
-- name: Distribuite the UCP root CA to the other candidate Controllers.
+- name: Distribuite the UCP root CA to the other Controllers.
   copy:
     src: "{{ local_docker_ucp_backup_file }}"
     dest: "{{ docker_ucp_backup_file }}"
   when: inventory_hostname != groups['docker_ucp_controller'][0]
 
-- name: Export the UCP Controller URL as Fact.
+- name: Export the docker_ucp_controller_url fact if not defined.
   set_fact:
     docker_ucp_controller_url: "https://{{ docker_ucp_host_address }}:{{ docker_ucp_controller_port }}"
   run_once: true
@@ -76,7 +76,7 @@
   changed_when: False
   when: inventory_hostname == groups['docker_ucp_controller'][0]
 
-- name: Export the UCP instance fingerprint as Fact.
+- name: Export the docker_ucp_fingerprint fact.
   set_fact:
     docker_ucp_fingerprint: "{{ ucp_instance_fingerprint['stdout'] }}"
   run_once: true
@@ -91,10 +91,32 @@
         --admin-password {{ docker_ucp_admin_password }}
         --swarm-port {{ docker_ucp_swarm_port }}
         --controller-port {{ docker_ucp_controller_port }}
+        {% if docker_ucp_host_address is defined %}--host-address {{ docker_ucp_host_address }}{% endif %}
+        {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
         --url {{ docker_ucp_controller_url }}
         --fingerprint {{ docker_ucp_fingerprint }}
-        {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
         {% if docker_ucp_backup_passfrase is defined and docker_ucp_backup_passfrase != "" %}--passfrase {{ docker_ucp_backup_passfrase }}{% endif %}
-  when: inventory_hostname != groups['docker_ucp_controller'][0] and ucp_controller['stdout'] == ""
+  when: inventory_hostname != groups['docker_ucp_controller'][0]
+    and 'docker_ucp_controller' in group_names
+    and ucp_controller['stdout'] == ""
 
-- fail: msg="Ciaooone"
+- name: Check if UCP is running on cluster nodes.
+  shell: docker ps -a --filter status=running --filter name=ucp-swarm-join --format "{{ '{{' }}.ID{{ '}}' }}"
+  changed_when: False
+  register: ucp_node
+
+- name: Add Nodes to the UCP cluster.
+  shell: docker run --rm --name ucp
+        -v /var/run/docker.sock:/var/run/docker.sock
+        docker/ucp join
+        --admin-username {{ docker_ucp_admin_username }}
+        --admin-password {{ docker_ucp_admin_password }}
+        --swarm-port {{ docker_ucp_swarm_port }}
+        --controller-port {{ docker_ucp_controller_port }}
+        {% if docker_ucp_host_address is defined %}--host-address {{ docker_ucp_host_address }}{% endif %}
+        {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
+        --url {{ docker_ucp_controller_url }}
+        --fingerprint {{ docker_ucp_fingerprint }}
+  when: inventory_hostname != groups['docker_ucp_controller'][0]
+    and 'docker_ucp_node' in group_names
+    and ucp_node['stdout'] == ""

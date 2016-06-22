@@ -1,5 +1,10 @@
 ---
 
+ansible:
+#  verbose: true
+  extra_vars:
+    docker_ucp_host_address: "{{ ansible_all_ipv4_addresses[0] }}"
+
 # configuration options for the internal call to vagrant
 vagrant:
 
@@ -22,7 +27,6 @@ vagrant:
       ansible_groups:
         - docker_csengine
         - docker_ucp_controller
-        - docker_dtr
       interfaces:
         - network_name: private_network
           type: dhcp
@@ -32,13 +36,10 @@ vagrant:
     - name: ansible-datacenter-02
       ansible_groups:
         - docker_csengine
-        - docker_ucp_controller
+        - docker_ucp_node
       interfaces:
         - network_name: private_network
           type: dhcp
           auto_config: true
       options:
         append_platform_to_hostname: yes
-      # vagrant arguments specific to this instance
-#      raw_config_args:
-#        - "vm.synced_folder '../projects/web', '/web'"
