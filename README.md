@@ -1,7 +1,7 @@
 Ansible Role: Docker Datacenter
 ===============================
 
-Installs Docker Datacenter (https://docs.docker.com/ucp) on RHEL/CentOS and
+Install Docker Datacenter (https://docs.docker.com/ucp) on RHEL/CentOS and
 Debian/Ubuntu servers.
 
 Requirements
