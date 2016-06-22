@@ -12,8 +12,6 @@ vagrant:
   platforms:
     - name: centos7
       box: centos/7
-    - name: xenial
-      box: ubuntu/xenial64
 
   providers:
     - name: virtualbox
