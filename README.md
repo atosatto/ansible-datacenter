@@ -1,6 +1,8 @@
 Ansible Role: Docker Datacenter
 ===============================
 
+[![Build Status](https://travis-ci.org/atosatto/ansible-datacenter.svg?branch=master)](https://travis-ci.org/atosatto/ansible-datacenter)
+
 Install Docker Datacenter (https://docs.docker.com/ucp) on RHEL/CentOS and
 Debian/Ubuntu servers.
 
