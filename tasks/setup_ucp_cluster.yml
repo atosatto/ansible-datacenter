@@ -1,10 +1,5 @@
 ---
 
-- name: Install docker-py.
-  package:
-    name: python-docker-py
-    state: present
-
 - name: Check if UCP is running on controllers.
   shell: docker ps -a --filter status=running --filter name=ucp-controller --format "{{ '{{' }}.ID{{ '}}' }}"
   changed_when: False
