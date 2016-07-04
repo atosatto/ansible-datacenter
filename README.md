@@ -75,14 +75,14 @@ Example Playbook
     datacenter-02 ansible_ssh_host=172.10.10.2
 
     [docker_csengine]
-    datacenter-01-centos7
-    datacenter-02-centos7
+    datacenter-01
+    datacenter-02
 
     [docker_ucp_controller]
-    datacenter-01-centos7
+    datacenter-01
 
     [docker_ucp_node]
-    datacenter-02-centos7
+    datacenter-02
 
     $ cat playbook.yml
     - name: "Install Docker datacenter"
