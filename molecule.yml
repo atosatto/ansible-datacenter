@@ -3,7 +3,7 @@
 ansible:
 #  verbose: true
   extra_vars:
-    docker_ucp_host_address: "{{ ansible_all_ipv4_addresses[0] }}"
+    docker_ucp_host_address: "{{ ansible_all_ipv4_addresses | select('match', '172.28.128.*') | first }}"
 
 # configuration options for the internal call to vagrant
 vagrant:
@@ -12,6 +12,8 @@ vagrant:
   platforms:
     - name: centos7
       box: centos/7
+    - name: xenial
+      box: bento/ubuntu-16.04
 
   providers:
     - name: virtualbox
