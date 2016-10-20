@@ -100,6 +100,7 @@
   changed_when: False
   register: ucp_node
 
+# --host-address for nodes is not docker_ucp_host_address.
 - name: Add Nodes to the UCP cluster.
   shell: docker run --rm --name ucp
         -v /var/run/docker.sock:/var/run/docker.sock
@@ -108,10 +109,24 @@
         --admin-password {{ docker_ucp_admin_password }}
         --swarm-port {{ docker_ucp_swarm_port }}
         --controller-port {{ docker_ucp_controller_port }}
-        {% if docker_ucp_host_address is defined %}--host-address {{ docker_ucp_host_address }}{% endif %}
         {% if docker_ucp_san is defined %}{% for item in docker_ucp_san %}--san {{ item }} {% endfor %}{% endif %}
         --url {{ docker_ucp_controller_url }}
         --fingerprint {{ docker_ucp_fingerprint }}
   when: inventory_hostname != groups['docker_ucp_controller'][0]
     and 'docker_ucp_node' in group_names
     and ucp_node['stdout'] == ""
+
+#
+# Install the Docker Trusted Registry.
+#
+- name: Check if DTR is running on cluster nodes.
+  shell: docker ps -a --filter status=running --filter name=dtr-registry-\* --format "{{ '{{' }}.ID{{ '}}' }}"
+  changed_when: False
+  register: dtr_node
+
+- name: Add Docker Trusted Registry to a non-controller node.
+  include: setup_dtr.yml
+  when: inventory_hostname != groups['docker_ucp_controller'][0]
+    and 'docker_dtr_node' in group_names
+    and inventory_hostname == groups['docker_dtr_node'][0]
+    and dtr_node['stdout'] == ""

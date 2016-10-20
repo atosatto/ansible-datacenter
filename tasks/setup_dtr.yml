@@ -1,0 +1,14 @@
+---
+
+- name: Download the UCP certificate.
+  shell: curl -k {{docker_ucp_controller_url}}/ca > /tmp/ucp-ca.pem
+
+- name: Install Docker Trusted Registry
+  shell: docker run --rm docker/dtr install
+        --ucp-url {{docker_ucp_controller_url}}
+        --ucp-node {{ groups['docker_dtr_node'][0] }}
+        --dtr-external-url {{ groups['docker_dtr_node']|map('extract', hostvars, ['ansible_ssh_host'])|list|join('') }}
+        --ucp-username  {{ docker_ucp_admin_username }}
+        --ucp-password  {{ docker_ucp_admin_password }}
+        --ucp-ca "$(cat /tmp/ucp-ca.pem)"
+

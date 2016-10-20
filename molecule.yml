@@ -3,8 +3,7 @@
 ansible:
 #  verbose: true
   extra_vars:
-    docker_ucp_host_address: "{{ ansible_all_ipv4_addresses | select('match', '172.28.128.*') | first }}"
-
+    docker_ucp_host_address: "{{ groups['docker_ucp_controller']|map('extract', hostvars, ['ansible_ssh_host'])| first }}"
 # configuration options for the internal call to vagrant
 vagrant:
 
@@ -21,6 +20,12 @@ vagrant:
       options:
         memory: 2048
         cpus: 2
+    - name: digital_ocean  # Work in progress
+      type: digital_ocean
+      options:
+        region: fra1
+        size: 2gb
+        image: centos-7-x64
 
   instances:
     - name: ansible-datacenter-01
@@ -37,6 +42,7 @@ vagrant:
       ansible_groups:
         - docker_csengine
         - docker_ucp_node
+        - docker_dtr_node
       interfaces:
         - network_name: private_network
           type: dhcp

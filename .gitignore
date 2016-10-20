@@ -1,7 +1,10 @@
 .molecule/
 .vagrant/
+.idea
 tests/.cache/
 
 *.retry
 
 files/*.lic
+
+
