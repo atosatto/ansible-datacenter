@@ -84,6 +84,10 @@ Example Playbook
     [docker_ucp_node]
     datacenter-02
 
+    # Optional Docker Trusted Registry.
+    [docker_dtr_node]
+    datacenter-02
+
     $ cat playbook.yml
     - name: "Install Docker datacenter"
       hosts: all
